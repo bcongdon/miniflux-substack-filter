@@ -8,11 +8,12 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	lru "github.com/hashicorp/golang-lru"
 
+	lru "github.com/hashicorp/golang-lru"
 	miniflux "miniflux.app/client"
 )
 
+// Service represents a substack filter service.
 type Service struct {
 	client *miniflux.Client
 	l      log.Logger
@@ -20,6 +21,7 @@ type Service struct {
 	cache  *lru.Cache
 }
 
+// New creates a new Service.
 func New(client *miniflux.Client, logger log.Logger, dryRun bool) (*Service, error) {
 	cache, err := lru.New(1024)
 	if err != nil {
@@ -33,6 +35,7 @@ func New(client *miniflux.Client, logger log.Logger, dryRun bool) (*Service, err
 	}, nil
 }
 
+// RunFilterJob runs the filtering job, which marks paywalled entries as read.
 func (s *Service) RunFilterJob() error {
 	f, err := s.client.Entries(&miniflux.Filter{Status: miniflux.EntryStatusUnread})
 	if err != nil {
@@ -47,7 +50,6 @@ func (s *Service) RunFilterJob() error {
 			level.Debug(s.l).Log("msg", "skipping cached entry", "entry_id", entry.ID)
 			continue
 		}
-		level.Info(s.l).Log("url", entry.URL)
 		res, err := http.Get(entry.URL)
 		if err != nil || res.StatusCode != 200 {
 			level.Error(s.l).Log("msg", "unable to get entry body", "err", err, "status_code", res.StatusCode)
@@ -61,7 +63,7 @@ func (s *Service) RunFilterJob() error {
 			continue
 		}
 		paywalled := doc.Find("article.post .paywall").Length() > 0
-		level.Debug(s.l).Log("url", entry.URL, "paywalled", paywalled)
+		level.Debug(s.l).Log("msg", "fetched substack article", "url", entry.URL, "paywalled", paywalled)
 
 		s.cache.Add(entry.ID, true)
 		if !paywalled {

@@ -28,7 +28,7 @@ func setupLogger(logLevel string) log.Logger {
 	case "error":
 		l = level.NewFilter(l, level.AllowError())
 	default:
-		l = level.NewFilter(l, level.AllowError())
+		l = level.NewFilter(l, level.AllowInfo())
 	}
 	return log.With(l, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 }
@@ -78,8 +78,10 @@ func main() {
 	svc, err := filter.New(client, l, *dryRun)
 	if err != nil {
 		level.Error(l).Log("msg", "unable to create filter service", "err", err)
+		return
 	}
 	c.AddFunc(*refreshInterval, func() {
+		level.Info(l).Log("msg", "running filter job")
 		if err := svc.RunFilterJob(); err != nil {
 			level.Error(l).Log("msg", "filter cron job failed", "err", err)
 		}
