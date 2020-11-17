@@ -5,7 +5,6 @@ RUN mkdir /build
 WORKDIR /build
 
 COPY go.mod go.sum ./
-RUN touch main.go
 RUN go mod download
 COPY . .
 
