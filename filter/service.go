@@ -70,7 +70,11 @@ func (s *Service) RunFilterJob() error {
 
 		res, err := http.Get(entry.URL)
 		if err != nil || res.StatusCode != 200 {
-			level.Error(s.l).Log("msg", "unable to get entry body", "err", err, "status_code", res.StatusCode)
+			var status int
+			if res != nil {
+				status = res.StatusCode
+			}
+			level.Error(s.l).Log("msg", "unable to get entry body", "err", err, "status_code", status)
 			continue
 		}
 		defer res.Body.Close()
