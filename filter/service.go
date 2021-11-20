@@ -2,10 +2,8 @@ package filter
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 
@@ -36,8 +34,7 @@ func New(client *miniflux.Client, logger log.Logger, dryRun bool) (*Service, err
 }
 
 const (
-	paywalledThreadToken = "This thread is only visible to paying subscribers of"
-	rewriteRule          = "substack_paywall"
+	rewriteRule = "substack_paywall"
 )
 
 // RunFilterJob runs the filtering job, which marks paywalled entries as read.
@@ -68,26 +65,11 @@ func (s *Service) RunFilterJob() error {
 		}
 		level.Debug(s.l).Log("msg", "scraping entry", "url", entry.URL, "entry_id", entry.ID)
 
-		res, err := http.Get(entry.URL)
-		if err != nil || res.StatusCode != 200 {
-			var status int
-			if res != nil {
-				status = res.StatusCode
-			}
-			level.Error(s.l).Log("msg", "unable to get entry body", "err", err, "status_code", status)
-			continue
-		}
-		defer res.Body.Close()
-
-		doc, err := goquery.NewDocumentFromResponse(res)
+		paywalled, err := IsURLPaywalled(s.l, entry.URL)
 		if err != nil {
-			level.Error(s.l).Log("msg", "unable to parse entry body", "err", err)
+			level.Error(s.l).Log("msg", "checking paywall", "err", err)
 			continue
 		}
-		articlePaywall := doc.Find("article.post .paywall").Length() > 0
-		threadPaywall := strings.Contains(doc.Find(".thread-head").Text(), paywalledThreadToken)
-		paywalled := articlePaywall || threadPaywall
-		level.Debug(s.l).Log("msg", "fetched substack article", "url", entry.URL, "article_paywall", articlePaywall, "thread_paywall", threadPaywall)
 
 		s.cache.Add(entry.ID, true)
 		if !paywalled {
