@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	paywalledThreadToken = "This thread is only visible to paying subscribers of"
+	paywalledThreadToken  = "This thread is only visible to paying subscribers of"
+	paywalledArticleToken = "This post is for paid subscribers"
 )
 
 func IsURLPaywalled(logger log.Logger, url string) (bool, error) {
@@ -30,7 +31,7 @@ func IsURLPaywalled(logger log.Logger, url string) (bool, error) {
 		level.Error(logger).Log("msg", "unable to parse entry body", "err", err)
 		return false, err
 	}
-	articlePaywall := doc.Find(".paywall").Length() > 0
+	articlePaywall := strings.Contains(doc.Find(".paywall").Text(), paywalledArticleToken)
 	threadPaywall := strings.Contains(doc.Find(".thread-head").Text(), paywalledThreadToken)
 	paywalled := articlePaywall || threadPaywall
 	level.Debug(logger).Log("msg", "fetched substack article", "url", url, "article_paywall", articlePaywall, "thread_paywall", threadPaywall)
