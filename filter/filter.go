@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	paywalledThreadToken  = "This thread is only visible to paying subscribers of"
+	paywalledThreadToken  = "This thread is only visible to paid subscribers of"
 	paywalledArticleToken = "This post is for paid subscribers"
 )
 
